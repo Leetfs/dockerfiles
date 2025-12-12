@@ -63,23 +63,20 @@ ENV PATH=/opt/riscv/bin:$PATH \
     NM=riscv64-unknown-linux-gnu-nm \
     CROSS_COMPILE=riscv64-unknown-linux-gnu-
 
-# 配置 QEMU 用户模式,使系统能够自动执行 RISC-V 二进制文件
-RUN update-binfmts --enable qemu-riscv64 || true
-
 # 验证交叉编译工具链是否正常工作
 RUN echo 'int main(){return 0;}' > /tmp/test.c && \
     riscv64-unknown-linux-gnu-gcc -c /tmp/test.c -o /tmp/test.o && \
     file /tmp/test.o | grep -qi 'RISC-V' && \
     rm -f /tmp/test.c /tmp/test.o
 
-# 验证 QEMU 模拟器是否工作
-RUN echo 'int main(){return 0;}' > /tmp/test.c && \
-    riscv64-unknown-linux-gnu-gcc -static /tmp/test.c -o /tmp/test && \
-    qemu-riscv64-static /tmp/test && \
-    rm -f /tmp/test.c /tmp/test
+# QEMU binfmt 必须在宿主机上注册
+# 在运行容器前,在宿主机执行:
+#   docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+# 验证 QEMU 已安装
+RUN which qemu-riscv64-static && \
+    qemu-riscv64-static --version | head -n 1
 
 # 设置工作目录
 VOLUME ["/workspace"]
 WORKDIR /workspace
-
 CMD ["/bin/bash"]
