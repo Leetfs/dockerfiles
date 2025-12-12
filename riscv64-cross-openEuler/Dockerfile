@@ -3,6 +3,7 @@
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
+    nano \
     build-essential \
     git \
     wget \
@@ -28,6 +29,9 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libexpat1-dev \
     libcurl4-openssl-dev \
+    # QEMU 用户模式模拟器 - 必需用于运行 RISC-V 二进制文件
+    qemu-user-static \
+    binfmt-support \
     # OBS 构建工具依赖
     rpm \
     rpm2cpio \
@@ -59,13 +63,23 @@ ENV PATH=/opt/riscv/bin:$PATH \
     NM=riscv64-unknown-linux-gnu-nm \
     CROSS_COMPILE=riscv64-unknown-linux-gnu-
 
+# 配置 QEMU 用户模式,使系统能够自动执行 RISC-V 二进制文件
+RUN update-binfmts --enable qemu-riscv64 || true
+
 # 验证交叉编译工具链是否正常工作
 RUN echo 'int main(){return 0;}' > /tmp/test.c && \
     riscv64-unknown-linux-gnu-gcc -c /tmp/test.c -o /tmp/test.o && \
     file /tmp/test.o | grep -qi 'RISC-V' && \
     rm -f /tmp/test.c /tmp/test.o
 
+# 验证 QEMU 模拟器是否工作
+RUN echo 'int main(){return 0;}' > /tmp/test.c && \
+    riscv64-unknown-linux-gnu-gcc /tmp/test.c -o /tmp/test && \
+    qemu-riscv64-static /tmp/test && \
+    rm -f /tmp/test.c /tmp/test
+
 # 设置工作目录
+VOLUME ["/workspace"]
 WORKDIR /workspace
 
 CMD ["/bin/bash"]
