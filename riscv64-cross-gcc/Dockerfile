@@ -1,16 +1,11 @@
-# RISC-V64 cross-compilation environment (Debian Bookworm)
-# - Includes riscv64-linux-gnu cross toolchain and common build deps
-# - Adds qemu-user to run simple riscv64 binaries via emulation
-# - Performs a tiny sanity check compile
+# 本 Dockerfile 用于构建一个适用于 riscv64 交叉编译的 GCC 开发环境
 
 FROM debian:bookworm
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# 1) Enable source repositories and riscv64 multiarch
-# 2) Install base tools, cross toolchain, qemu, and useful build deps
 RUN set -eux; \
-    sed -n 's/^deb /deb-src /p' /etc/apt/sources.list >> /etc/apt/sources.list; \
+    sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources; \
     dpkg --add-architecture riscv64; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
