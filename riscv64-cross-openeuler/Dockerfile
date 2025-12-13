@@ -1,4 +1,7 @@
 # 本 Dockerfile 用于编译 openEuler RISC-V 64 位架构的软件包
+# QEMU binfmt 必须在宿主机上注册
+# 在运行容器前,在宿主机执行:
+#   docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
 FROM ubuntu:24.04
 
@@ -69,9 +72,6 @@ RUN echo 'int main(){return 0;}' > /tmp/test.c && \
     file /tmp/test.o | grep -qi 'RISC-V' && \
     rm -f /tmp/test.c /tmp/test.o
 
-# QEMU binfmt 必须在宿主机上注册
-# 在运行容器前,在宿主机执行:
-#   docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 # 验证 QEMU 已安装
 RUN which qemu-riscv64-static && \
     qemu-riscv64-static --version | head -n 1
